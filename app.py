@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session, flash
+from flask import Flask, render_template, request, redirect, session, flash, jsonify
 import requests
 
 app = Flask(__name__)
@@ -13,6 +13,23 @@ def get_headers():
 
 
 # ---------------- LOGIN ----------------
+
+@app.route("/start-app")
+def start_app():
+    try:
+        # Hit your Render app
+        response = requests.get(BASE_URL)
+
+        return jsonify({
+            "status": "success",
+            "message": "App is starting / reloading..."
+        })
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        })
+
 @app.route("/", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
