@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Create VM</h2>
+
+<form method="post">
+    <input class="form-control mb-2" name="name" placeholder="Name">
+    <input class="form-control mb-2" name="status" placeholder="Status">
+    <input class="form-control mb-2" name="cpu" placeholder="CPU">
+    <input class="form-control mb-2" name="memory" placeholder="Memory">
+    <input class="form-control mb-2" name="os" placeholder="OS">
+    <input class="form-control mb-2" name="region" placeholder="Region">
+    <input class="form-control mb-2" name="owner" placeholder="Owner">
+    <button class="btn btn-success">Create</button>
+</form>
+
+{% endblock %}

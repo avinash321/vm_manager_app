@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Update VM</h2>
+
+<form method="post">
+    <input class="form-control mb-2" name="name" value="{{ vm.name }}">
+    <input class="form-control mb-2" name="status" value="{{ vm.status }}">
+    <input class="form-control mb-2" name="cpu" value="{{ vm.cpu }}">
+    <input class="form-control mb-2" name="memory" value="{{ vm.memory }}">
+    <input class="form-control mb-2" name="os" value="{{ vm.os }}">
+    <input class="form-control mb-2" name="region" value="{{ vm.region }}">
+    <input class="form-control mb-2" name="owner" value="{{ vm.owner }}">
+    <button class="btn btn-warning">Update</button>
+</form>
+
+{% endblock %}
