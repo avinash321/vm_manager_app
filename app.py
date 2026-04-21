@@ -4,7 +4,7 @@ import requests
 app = Flask(__name__)
 app.secret_key = "supersecret"
 
-BASE_URL = "https://vm-manager-api.onrender.com"
+BASE_URL = "https://vm-manager-api.onrender.com/api/v1"
 
 
 def get_headers():
