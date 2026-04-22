@@ -7,19 +7,19 @@ app.secret_key = "supersecret"
 BASE_URL = "https://vm-manager-api.onrender.com/api/v1"
 
 
+# ---------------- COMMON ----------------
 def get_headers():
     token = session.get("token")
+    if not token:
+        return None
     return {"Authorization": f"Bearer {token}"}
 
 
-# ---------------- LOGIN ----------------
-
+# ---------------- START APP ----------------
 @app.route("/start-app")
 def start_app():
     try:
-        # Hit your Render app
         response = requests.get(BASE_URL)
-
         return jsonify({
             "status": "success",
             "message": "App is starting / reloading..."
@@ -30,6 +30,8 @@ def start_app():
             "message": str(e)
         })
 
+
+# ---------------- LOGIN ----------------
 @app.route("/", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -69,6 +71,10 @@ def logout():
 # ---------------- DASHBOARD ----------------
 @app.route("/dashboard")
 def dashboard():
+    headers = get_headers()
+    if not headers:
+        return redirect("/")
+
     params = {
         "skip": request.args.get("skip", 0),
         "limit": 10
@@ -81,21 +87,60 @@ def dashboard():
     if request.args.get("status"):
         params["status"] = request.args.get("status")
 
-    res = requests.get(f"{BASE_URL}/vms", headers=get_headers(), params=params)
+    # ✅ NEW: Search by ID
+    vm_id = request.args.get("id")
+    if vm_id:
+        res = requests.get(f"{BASE_URL}/vms/{vm_id}", headers=headers)
 
-    vms = res.json() if res.status_code == 200 else []
+        if res.status_code == 200:
+            vms = [res.json()]
+        else:
+            flash("VM not found")
+            vms = []
+
+        return render_template("dashboard.html", vms=vms, skip=0)
+
+    # Normal list API
+    res = requests.get(f"{BASE_URL}/vms", headers=headers, params=params)
+
+    if res.status_code != 200:
+        flash("Failed to fetch VMs")
+        vms = []
+    else:
+        vms = res.json()
 
     return render_template("dashboard.html", vms=vms, skip=int(params["skip"]))
+
+
+# ---------------- VIEW VM ----------------
+@app.route("/vm/<int:vm_id>")
+def view_vm(vm_id):
+    headers = get_headers()
+    if not headers:
+        return redirect("/")
+
+    res = requests.get(f"{BASE_URL}/vms/{vm_id}", headers=headers)
+
+    if res.status_code != 200:
+        flash("VM not found")
+        return redirect("/dashboard")
+
+    vm = res.json()
+    return render_template("view_vm.html", vm=vm)
 
 
 # ---------------- CREATE ----------------
 @app.route("/create", methods=["GET", "POST"])
 def create_vm():
+    headers = get_headers()
+    if not headers:
+        return redirect("/")
+
     if request.method == "POST":
         res = requests.post(
             f"{BASE_URL}/vms",
             json=request.form,
-            headers=get_headers()
+            headers=headers
         )
 
         if res.status_code == 200:
@@ -110,16 +155,25 @@ def create_vm():
 # ---------------- UPDATE ----------------
 @app.route("/update/<int:vm_id>", methods=["GET", "POST"])
 def update_vm(vm_id):
+    headers = get_headers()
+    if not headers:
+        return redirect("/")
+
     if request.method == "POST":
-        requests.put(
+        res = requests.put(
             f"{BASE_URL}/vms/{vm_id}",
             json=request.form,
-            headers=get_headers()
+            headers=headers
         )
-        flash("VM updated")
+
+        if res.status_code == 200:
+            flash("VM updated successfully")
+        else:
+            flash("Update failed")
+
         return redirect("/dashboard")
 
-    res = requests.get(f"{BASE_URL}/vms/{vm_id}", headers=get_headers())
+    res = requests.get(f"{BASE_URL}/vms/{vm_id}", headers=headers)
     vm = res.json()
 
     return render_template("update_vm.html", vm=vm)
@@ -128,10 +182,37 @@ def update_vm(vm_id):
 # ---------------- DELETE ----------------
 @app.route("/delete/<int:vm_id>")
 def delete_vm(vm_id):
-    requests.delete(f"{BASE_URL}/vms/{vm_id}", headers=get_headers())
-    flash("VM deleted")
+    headers = get_headers()
+    if not headers:
+        return redirect("/")
+
+    res = requests.delete(f"{BASE_URL}/vms/{vm_id}", headers=headers)
+
+    if res.status_code == 200:
+        flash("VM deleted")
+    else:
+        flash("Delete failed")
+
     return redirect("/dashboard")
 
+# ---------------- PROFILE ----------------
+@app.route("/profile")
+def profile():
+    headers = get_headers()
+    if not headers:
+        return redirect("/")
 
+    res = requests.get(f"{BASE_URL}/users/me", headers=headers)
+
+    if res.status_code != 200:
+        flash("Failed to load profile")
+        return redirect("/dashboard")
+
+    user = res.json()
+
+    return render_template("profile.html", user=user)
+
+
+# ---------------- RUN ----------------
 if __name__ == "__main__":
     app.run(debug=True)
